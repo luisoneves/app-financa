@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "turbo dev",
-    "build": "turbo build",
+    "build": "cd frontend && pnpm build",
     "check": "turbo check",
     "test": "turbo test"
   },
