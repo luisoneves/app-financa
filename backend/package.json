@@ -1,0 +1,29 @@
+{
+  "name": "backend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "build": "wrangler deploy --dry-run",
+    "check": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio"
+  },
+  "dependencies": {
+    "@cloudflare/workers-types": "^4.20241205.0",
+    "@hono/node-server": "^1.13.8",
+    "better-sqlite3": "^11.8.1",
+    "drizzle-orm": "^0.38.3",
+    "drizzle-kit": "^0.30.2",
+    "hono": "^4.7.11",
+    "jsonwebtoken": "^9.0.2",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/jsonwebtoken": "^9.0.9",
+    "typescript": "^5.7.3",
+    "wrangler": "^4.85.0"
+  }
+}

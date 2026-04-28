@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --text-primary: #f8fafc;
+  --accent: #0ea5e9;
+}
+
+body {
+  @apply bg-slate-900 text-slate-100 min-h-screen;
+}

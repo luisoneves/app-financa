@@ -1,0 +1,14 @@
+{
+  "name": "app-financa",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm -r run dev",
+    "build": "pnpm -r run build",
+    "check": "pnpm -r run check"
+  },
+  "packageManager": "pnpm@10.33.2",
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  }
+}

@@ -1,0 +1,13 @@
+name = "app-financa-backend"
+main = "dist/index.js"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[env.production]
+vars = { ENVIRONMENT = "production" }
+
+[[d1_databases]]
+binding = "DB"
+database_name = "app-financa-db"
+database_id = "local"
+preview_database_id = "local"
