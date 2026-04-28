@@ -53,7 +53,7 @@ resource "cloudflare_pages_project" "app_financa" {
       deployments_enabled = true
       production_branch = "main"
       build_command     = "pnpm run build"
-      destination_dir  = ".svelte-kit/cloudflare"
+      destination_dir  = "frontend/.svelte-kit/cloudflare"
       root_dir         = "frontend"
     }
   }
