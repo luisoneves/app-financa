@@ -17,12 +17,30 @@ transactions.get('/', async (c) => {
   const auth = getAuth(c);
   if (!auth) return c.json({ error: 'Unauthorized' }, 401);
 
+  const period = c.req.query('period') || 'all';
   const { d1 } = c.env;
-  const results = await d1
-    .prepare('SELECT * FROM transactions WHERE user_id = ? ORDER BY date DESC')
-    .bind(auth.sub)
-    .all();
 
+  let query = 'SELECT * FROM transactions WHERE user_id = ?';
+  let bindings = [auth.sub];
+
+  const now = new Date();
+  if (period === 'day') {
+    const today = now.toISOString().split('T')[0];
+    query += ' AND date = ?';
+    bindings.push(today);
+  } else if (period === 'week') {
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    query += ' AND date >= ?';
+    bindings.push(weekAgo);
+  } else if (period === 'month') {
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+    query += ' AND date >= ?';
+    bindings.push(monthStart);
+  }
+
+  query += ' ORDER BY date DESC';
+
+  const results = await d1.prepare(query).bind(...bindings).all();
   return c.json(results.results);
 });
 

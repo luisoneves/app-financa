@@ -12,6 +12,7 @@
     date: string;
   }[]>([]);
   let view = $state<'mine' | 'shared' | 'all'>('mine');
+  let period = $state<'all' | 'day' | 'week' | 'month'>('all');
   let loading = $state(true);
   let showForm = $state(false);
 
@@ -32,7 +33,7 @@
 
   async function loadTransactions() {
     loading = true;
-    transactions = await api.getTransactions(view);
+    transactions = await api.getTransactions(view, period);
     loading = false;
   }
 
@@ -61,6 +62,12 @@
         <option value="mine">Minhas</option>
         <option value="shared">Compartilhadas</option>
         <option value="all">Todas</option>
+      </select>
+      <select bind:value={period} onchange={loadTransactions} class="bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm">
+        <option value="all">Todos</option>
+        <option value="day">Hoje</option>
+        <option value="week">Últimos 7 dias</option>
+        <option value="month">Este mês</option>
       </select>
       <button onclick={() => showForm = !showForm} class="bg-sky-600 hover:bg-sky-500 text-white px-4 py-2 rounded-lg text-sm">
         + Nova

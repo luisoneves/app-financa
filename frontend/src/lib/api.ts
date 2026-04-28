@@ -58,8 +58,8 @@ export const api = {
     return res.ok ? res.json() : null;
   },
 
-  async getTransactions(view = 'mine'): Promise<Transaction[]> {
-    const res = await fetch(`${API_BASE}/transactions?view=${view}`, {
+  async getTransactions(view = 'mine', period = 'all'): Promise<Transaction[]> {
+    const res = await fetch(`${API_BASE}/transactions?view=${view}&period=${period}`, {
       credentials: 'include',
     });
     return res.ok ? res.json() : [];
