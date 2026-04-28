@@ -104,5 +104,7 @@ Execute estes testes após deploy no Cloudflare Pages/Workers.
 
 1. Fazer deploy no Cloudflare (git push)
 2. Executar testes manuais acima
-3. Implementar T-007 (filtros por período)
-4. Migrar `adapter-auto` → `adapter-cloudflare` após deploy
+3. ✅ ~~Implementar T-007 (filtros por período)~~
+4. Implementar Google Auth (feature/google-auth)
+5. Configurar backend deploy (Cloudflare Worker + D1)
+6. Conectar frontend no backend real (não mais mock)
