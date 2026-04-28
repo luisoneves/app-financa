@@ -18,10 +18,19 @@ O app-financa suporta login via Google OAuth 2.0 além do login tradicional com 
 
 6. Crie **OAuth Client ID**:
    - Application type: Web application
-   - Name: app-financa-web
+   - Name: app-financa
+   - Authorized JavaScript origins:
+     ```
+     https://app-financa.pages.dev
+     https://bdb567b2.app-financa.pages.dev
+     http://localhost:5173
+     ```
    - Authorized redirect URIs:
-     - `https://app-financa.pages.dev/api/auth/google/callback` (produção)
-     - `http://localhost:8787/api/auth/google/callback` (desenvolvimento)
+     ```
+     https://app-financa.pages.dev/api/auth/google/callback
+     https://bdb567b2.app-financa.pages.dev/api/auth/google/callback
+     http://localhost:8787/api/auth/google/callback
+     ```
 
 7. Anote o **Client ID** e **Client Secret**
 
