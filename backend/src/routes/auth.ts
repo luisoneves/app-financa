@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { sign, verify } from 'jsonwebtoken';
 import { setCookie } from 'hono/cookie';
 import type { Env } from 'hono';
+import { authRateLimiter, getClientIp } from '../middleware/rate-limit';
 
 const auth = new Hono<{ Bindings: Env }>();
 
@@ -49,13 +50,27 @@ const validatePassword = (p: string): boolean => {
 };
 
 auth.post('/login', async (c) => {
+  const ip = getClientIp(c.req);
+  const { allowed, remaining, resetAt } = authRateLimiter.check(ip, 'login');
+
+  if (!allowed) {
+    c.res.headers.set('RateLimit-Limit', '5');
+    c.res.headers.set('RateLimit-Remaining', '0');
+    c.res.headers.set('RateLimit-Reset', String(Math.ceil((resetAt - Date.now()) / 1000)));
+    return c.json({ error: 'Muitas tentativas. Aguarde 1 minuto.' }, 429);
+  }
+
+  c.res.headers.set('RateLimit-Limit', '5');
+  c.res.headers.set('RateLimit-Remaining', String(remaining));
+  c.res.headers.set('RateLimit-Reset', String(Math.ceil((resetAt - Date.now()) / 1000)));
+
   const body = await c.req.json();
   const { username, password } = body;
 
   const user = VALID_USERS.find((u) => u.username === username && u.password === password);
 
   if (!user) {
-    return c.json({ error: 'Credenciais inválidas' }, 401);
+    return c.json({ error: 'Usuário ou senha incorretos' }, 401);
   }
 
   const secret = process.env.JWT_SECRET || c.env.JWT_SECRET || 'fallback-secret-change-me';
@@ -95,15 +110,15 @@ auth.post('/change-password', async (c) => {
     const { currentPassword, newPassword } = await c.req.json();
 
     const user = VALID_USERS.find((u) => u.username === payload.sub);
-    if (!user) return c.json({ error: 'Usuário não encontrado' }, 404);
+    if (!user) return c.json({ error: 'Erro interno' }, 500);
 
     if (user.password !== currentPassword) {
-      return c.json({ error: 'Senha atual incorreta' }, 400);
+      return c.json({ error: 'Dados incorretos' }, 400);
     }
 
     if (!validatePassword(newPassword)) {
       return c.json({
-        error: 'Nova senha deve ter: 8+ caracteres, letra maiúscula, minúscula, número e caractere especial',
+        error: 'Senha deve ter: 8+ caracteres, letra maiúscula, minúscula, número e caractere especial',
       }, 400);
     }
 
@@ -126,7 +141,7 @@ auth.post('/change-password', async (c) => {
 
     return c.json({ ok: true });
   } catch {
-    return c.json({ error: 'Token inválido' }, 401);
+    return c.json({ error: 'Erro interno' }, 500);
   }
 });
 
