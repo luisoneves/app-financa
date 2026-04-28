@@ -6,6 +6,17 @@ import { authRateLimiter, getClientIp } from '../middleware/rate-limit';
 
 const auth = new Hono<{ Bindings: Env }>();
 
+type GoogleUser = {
+  sub: string;
+  email: string;
+  name: string;
+  picture?: string;
+};
+
+const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
+const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
+const GOOGLE_USERINFO_URL = 'https://www.googleapis.com/oauth2/v3/userinfo';
+
 type UserRecord = {
   username: string;
   password: string;
@@ -165,6 +176,123 @@ auth.get('/me', async (c) => {
     return c.json({ name: payload.name, role: payload.role, mustChangePassword: payload.mustChangePassword });
   } catch {
     return c.json({ error: 'Token inválido' }, 401);
+  }
+});
+
+auth.get('/google', (c) => {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const redirectUri = process.env.GOOGLE_REDIRECT_URI;
+
+  if (!clientId || !redirectUri) {
+    return c.json({ error: 'Google OAuth não configurado' }, 500);
+  }
+
+  const scopes = ['openid', 'email', 'profile'];
+  const state = Math.random().toString(36).substring(7);
+
+  const authUrl = new URL(GOOGLE_AUTH_URL);
+  authUrl.searchParams.set('client_id', clientId);
+  authUrl.searchParams.set('redirect_uri', redirectUri);
+  authUrl.searchParams.set('response_type', 'code');
+  authUrl.searchParams.set('scope', scopes.join(' '));
+  authUrl.searchParams.set('state', state);
+  authUrl.searchParams.set('access_type', 'offline');
+
+  return c.redirect(authUrl.toString());
+});
+
+auth.get('/google/callback', async (c) => {
+  const code = c.req.query('code');
+  const error = c.req.query('error');
+
+  if (error) {
+    return c.json({ error: `Google OAuth error: ${error}` }, 400);
+  }
+
+  if (!code) {
+    return c.json({ error: 'Código de autorização não fornecido' }, 400);
+  }
+
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const redirectUri = process.env.GOOGLE_REDIRECT_URI;
+
+  if (!clientId || !clientSecret || !redirectUri) {
+    return c.json({ error: 'Google OAuth não configurado' }, 500);
+  }
+
+  try {
+    const tokenResponse = await fetch(GOOGLE_TOKEN_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        code,
+        client_id: clientId,
+        client_secret: clientSecret,
+        redirect_uri: redirectUri,
+        grant_type: 'authorization_code',
+      }),
+    });
+
+    if (!tokenResponse.ok) {
+      const errorData = await tokenResponse.json();
+      return c.json({ error: `Falha ao obter token: ${errorData.error}` }, 400);
+    }
+
+    const tokenData = await tokenResponse.json();
+    const { access_token } = tokenData;
+
+    const userResponse = await fetch(GOOGLE_USERINFO_URL, {
+      headers: { Authorization: `Bearer ${access_token}` },
+    });
+
+    if (!userResponse.ok) {
+      return c.json({ error: 'Falha ao obter dados do usuário' }, 400);
+    }
+
+    const googleUser: GoogleUser = await userResponse.json();
+
+    const secret = process.env.JWT_SECRET || c.env.JWT_SECRET || 'fallback-secret-change-me';
+
+    const existingUser = VALID_USERS.find((u) => u.username === googleUser.email);
+
+    let userRecord;
+    if (existingUser) {
+      userRecord = existingUser;
+    } else {
+      userRecord = {
+        username: googleUser.email,
+        password: '',
+        name: googleUser.name,
+        role: 'user' as const,
+        mustChangePassword: false,
+      };
+    }
+
+    const token = sign(
+      {
+        sub: userRecord.username,
+        name: userRecord.name,
+        role: userRecord.role,
+        mustChangePassword: userRecord.mustChangePassword,
+        provider: 'google',
+      },
+      secret,
+      { expiresIn: '7d' }
+    );
+
+    setCookie(c, 'auth_token', token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'Lax',
+      maxAge: 60 * 60 * 24 * 7,
+      path: '/',
+    });
+
+    return c.redirect('/');
+  } catch (err) {
+    console.error('Google OAuth error:', err);
+    return c.json({ error: 'Erro interno no Google OAuth' }, 500);
   }
 });
 

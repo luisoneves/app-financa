@@ -4,7 +4,10 @@ compatibility_date = "2024-01-01"
 compatibility_flags = ["nodejs_compat"]
 
 [env.production]
-vars = { ENVIRONMENT = "production" }
+vars = { ENVIRONMENT = "production", GOOGLE_CLIENT_ID = "", GOOGLE_REDIRECT_URI = "" }
+
+[env.production.secrets]
+GOOGLE_CLIENT_SECRET = ""
 
 [[d1_databases]]
 binding = "DB"

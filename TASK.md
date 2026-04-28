@@ -111,6 +111,22 @@
 
 ---
 
+### T-011 | Google OAuth Login
+**Resultado:** Login via Google OAuth 2.0
+**Escopo:**
+- `backend/src/routes/auth.ts` - rotas `/google` e `/google/callback`
+- `frontend/src/routes/login/+page.svelte` - botão "Entrar com Google"
+- `.dev.vars.example` - variáveis `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`
+- `docs/GOOGLE_AUTH_SETUP.md` - documentação de configuração
+**Validação:**
+- GET `/api/auth/google` redireciona para Google
+- GET `/api/auth/google/callback` processa código e retorna JWT
+- Botão no frontend redireciona para OAuth
+- Login existente continua funcionando
+**Prioridade:** MEDIUM
+
+---
+
 ## Status Board
 
 | Task | Sprint | Status |
@@ -125,51 +141,7 @@
 | T-008 | 3 | ✅ |
 | T-009 | 3 | ✅ |
 | T-010 | 3 | ✅ |
-
-## Test Scripts
-
-| Script | Comando | Validação |
-|--------|----------|-----------|
-| Backend Build | `cd backend && pnpm build` | `wrangler deploy --dry-run` sem erro |
-| Backend Dev | `cd backend && wrangler dev` | API sobe em localhost |
-| Frontend Build | `cd frontend && pnpm build` | `vite build` sem erro |
-| Frontend Dev | `cd frontend && pnpm dev` | SvelteKit sobe em localhost:5173 |
-
-## Testes Manuais
-
-### Auth (T-004)
-- [ ] POST `/api/auth/login` com credenciais válidas → retorna JWT
-- [ ] POST `/api/auth/login` com credenciais inválidas → 401
-- [ ] GET `/api/auth/me` com token válido → retorna usuário
-- [ ] Login via frontend `/login` → redireciona para `/`
-
-### Transações (T-005)
-- [ ] POST `/api/transactions` cria registro
-- [ ] GET `/api/transactions` lista por usuário
-- [ ] DELETE `/api/transactions/:id` remove registro
-- [ ] Frontend `/transacoes` → lista transações
-- [ ] Frontend → criar nova transação via form
-- [ ] Toggle view (Minhas/Compartilhadas/Todas)
-
-### Dashboard (T-006)
-- [ ] `/` carrega com resumo financeiro
-- [ ] Gráficos renderizam com dados (Recharts)
-
-### Calendário (T-008)
-- [ ] `/calendario` mostra mês atual
-- [ ] Criar evento via form
-- [ ] Toggle view funciona
-
-### Kanban (T-009)
-- [ ] `/tarefas` mostra colunas (A Fazer/Em Progresso/Concluído)
-- [ ] Criar tarefa via form
-- [ ] Mover tarefa entre colunas
-- [ ] Deletar tarefa
-
-### Filtros por Período (T-007) - PENDENTE
-- [ ] GET `/api/transactions?period=day` → filtra por dia
-- [ ] GET `/api/transactions?period=week` → filtra por semana
-- [ ] GET `/api/transactions?period=month` → filtra por mês
+| T-011 | 3 | 🚧 |
 
 ---
 

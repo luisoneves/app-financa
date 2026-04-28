@@ -90,6 +90,35 @@ Execute estes testes após deploy no Cloudflare Pages/Workers.
 
 ---
 
+## 🔐 Google Auth (T-011)
+
+- [ ] **Login com Google - Sucesso**
+  - Acesse `/login`
+  - Clique em "Entrar com Google"
+  - Deve redirecionar para Google consent screen
+  - Autorize o app
+  - Deve redirecionar para `/` com login efetuado
+
+- [ ] **Login com Google - Cancelado**
+  - Clique em "Entrar com Google"
+  - Cancele na tela do Google
+  - Deve retornar erro apropriado
+
+- [ ] **Login Google com usuário existente**
+  - Use um email que já existe em `VALID_USERS`
+  - Após login Google, verifique se `role` e `mustChangePassword` foram preservados
+
+- [ ] **Login Google novo usuário**
+  - Use um email não listado em `VALID_USERS`
+  - Deve criar usuário com `role: user` e `mustChangePassword: false`
+
+- [ ] **Google OAuth não configurado**
+  - Remova as variáveis de ambiente
+  - Tente acessar `/api/auth/google`
+  - Deve retornar erro 500 "Google OAuth não configurado"
+
+---
+
 ## 🐛 Bugs Conhecidos (Termux)
 
 - ⚠️ `pnpm dev` com `--host 0.0.0.0` falha no Termux
