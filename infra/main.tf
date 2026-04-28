@@ -33,11 +33,13 @@ resource "cloudflare_pages_project" "app_financa" {
     production {
       environment = {
         "NODE_VERSION" = "22"
+        "FRONTEND_URL" = "https://app-financa.pages.dev"
       }
     }
     preview {
       environment = {
         "NODE_VERSION" = "22"
+        "FRONTEND_URL" = "https://app-financa.pages.dev"
       }
     }
   }
@@ -47,12 +49,12 @@ resource "cloudflare_pages_project" "app_financa" {
     config {
       owner = "luisoneves"
       repo  = "app-financa"
-      path  = "/"
+      path  = "frontend"
       deployments_enabled = true
       production_branch = "main"
       build_command     = "pnpm run build"
       destination_dir  = ".svelte-kit/cloudflare"
-      root_dir         = "/"
+      root_dir         = "frontend"
     }
   }
 }
