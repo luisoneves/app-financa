@@ -1,5 +1,4 @@
 import { Hono } from 'hono';
-import { v4 as uuidv4 } from 'uuid';
 import { getAuth } from '../middleware/auth';
 
 const events = new Hono();
@@ -34,7 +33,7 @@ events.post('/', async (c) => {
   if (!auth) return c.json({ error: 'Unauthorized' }, 401);
 
   const body = await c.req.json();
-  const id = uuidv4();
+  const id = crypto.randomUUID();
 
   await c.env.d1
     .prepare(

@@ -1,6 +1,5 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
-import { v4 as uuidv4 } from 'uuid';
 import { getAuth } from '../middleware/auth';
 
 const transactionSchema = z.object({
@@ -34,7 +33,7 @@ transactions.post('/', async (c) => {
   const body = await c.req.json();
   const data = transactionSchema.parse(body);
 
-  const id = uuidv4();
+  const id = crypto.randomUUID();
   await c.env.d1
     .prepare(
       `INSERT INTO transactions (id, user_id, type, amount, category, payment, description, date, created_at)
