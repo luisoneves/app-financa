@@ -1,32 +1,58 @@
 import { Hono } from 'hono';
-import { sign } from 'jsonwebtoken';
+import { sign, verify } from 'jsonwebtoken';
 import { setCookie } from 'hono/cookie';
 import type { Env } from 'hono';
 
 const auth = new Hono<{ Bindings: Env }>();
 
+type UserRecord = {
+  username: string;
+  password: string;
+  name: string;
+  role: 'user' | 'mae';
+  mustChangePassword: boolean;
+};
+
+const VALID_USERS: UserRecord[] = [
+  {
+    username: process.env.USUARIO_1 || 'elissnsilveira',
+    password: process.env.SENHA_1 || 'padrao123',
+    name: process.env.NOME_1 || 'Elissandra',
+    role: 'user',
+    mustChangePassword: true,
+  },
+  {
+    username: process.env.USUARIO_2 || 'sarasilveira',
+    password: process.env.SENHA_2 || 'padrao123',
+    name: process.env.NOME_2 || 'Sara',
+    role: 'mae',
+    mustChangePassword: true,
+  },
+  {
+    username: process.env.USUARIO_3 || 'sirneysilveira',
+    password: process.env.SENHA_3 || 'padrao123',
+    name: process.env.NOME_3 || 'Sirney',
+    role: 'mae',
+    mustChangePassword: true,
+  },
+  {
+    username: process.env.USUARIO_4 || 'luisneves',
+    password: process.env.SENHA_4 || 'padrao123',
+    name: process.env.NOME_4 || 'Luis',
+    role: 'user',
+    mustChangePassword: true,
+  },
+];
+
+const validatePassword = (p: string): boolean => {
+  return /[A-Z]/.test(p) && /[a-z]/.test(p) && /[0-9]/.test(p) && /[!@#$%^&*]/.test(p) && p.length >= 8;
+};
+
 auth.post('/login', async (c) => {
   const body = await c.req.json();
   const { username, password } = body;
 
-  const validUsers = [
-    {
-      username: process.env.USUARIO_PRINCIPAL,
-      password: process.env.SENHA_PRINCIPAL,
-      name: process.env.NOME_PRINCIPAL,
-      role: 'user',
-    },
-    {
-      username: process.env.USUARIO_MAE,
-      password: process.env.SENHA_MAE,
-      name: process.env.NOME_MAE,
-      role: 'mae',
-    },
-  ];
-
-  const user = validUsers.find(
-    (u) => u.username === username && u.password === password
-  );
+  const user = VALID_USERS.find((u) => u.username === username && u.password === password);
 
   if (!user) {
     return c.json({ error: 'Credenciais inválidas' }, 401);
@@ -34,7 +60,12 @@ auth.post('/login', async (c) => {
 
   const secret = process.env.JWT_SECRET || c.env.JWT_SECRET || 'fallback-secret-change-me';
   const token = sign(
-    { sub: username, name: user.name, role: user.role },
+    {
+      sub: username,
+      name: user.name,
+      role: user.role,
+      mustChangePassword: user.mustChangePassword,
+    },
     secret,
     { expiresIn: '7d' }
   );
@@ -47,7 +78,56 @@ auth.post('/login', async (c) => {
     path: '/',
   });
 
-  return c.json({ name: user.name, role: user.role });
+  return c.json({
+    name: user.name,
+    role: user.role,
+    mustChangePassword: user.mustChangePassword,
+  });
+});
+
+auth.post('/change-password', async (c) => {
+  const token = c.req.cookie('auth_token');
+  if (!token) return c.json({ error: 'Não autenticado' }, 401);
+
+  try {
+    const secret = process.env.JWT_SECRET || c.env.JWT_SECRET || 'fallback-secret-change-me';
+    const payload = verify(token, secret) as { sub: string; mustChangePassword: boolean };
+    const { currentPassword, newPassword } = await c.req.json();
+
+    const user = VALID_USERS.find((u) => u.username === payload.sub);
+    if (!user) return c.json({ error: 'Usuário não encontrado' }, 404);
+
+    if (user.password !== currentPassword) {
+      return c.json({ error: 'Senha atual incorreta' }, 400);
+    }
+
+    if (!validatePassword(newPassword)) {
+      return c.json({
+        error: 'Nova senha deve ter: 8+ caracteres, letra maiúscula, minúscula, número e caractere especial',
+      }, 400);
+    }
+
+    user.password = newPassword;
+    user.mustChangePassword = false;
+
+    const newToken = sign(
+      { sub: user.username, name: user.name, role: user.role, mustChangePassword: false },
+      secret,
+      { expiresIn: '7d' }
+    );
+
+    setCookie(c, 'auth_token', newToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'Lax',
+      maxAge: 60 * 60 * 24 * 7,
+      path: '/',
+    });
+
+    return c.json({ ok: true });
+  } catch {
+    return c.json({ error: 'Token inválido' }, 401);
+  }
 });
 
 auth.post('/logout', (c) => {
@@ -66,9 +146,8 @@ auth.get('/me', async (c) => {
   }
   try {
     const secret = process.env.JWT_SECRET || c.env.JWT_SECRET || 'fallback-secret-change-me';
-    const { verify: verifyJwt } = await import('jsonwebtoken');
-    const payload = verifyJwt(token, secret) as { name: string; role: string };
-    return c.json({ name: payload.name, role: payload.role });
+    const payload = verify(token, secret) as { name: string; role: string; mustChangePassword: boolean };
+    return c.json({ name: payload.name, role: payload.role, mustChangePassword: payload.mustChangePassword });
   } catch {
     return c.json({ error: 'Token inválido' }, 401);
   }
